@@ -24,6 +24,7 @@ app.configure('production', function(){
 });
 
 app.get('/:version/config', ocs.config.get);
+/*
 app.post('/:version/person/check', ocs.person.check);
 app.post('/:version/person/add', ocs.person.add);
 app.post('/:version/person/remove', ocs.person.remove);
@@ -105,40 +106,4 @@ app.post('/:version/comments/add', function(req, res) {
 app.post('/:version/comments/vote/:commentid', function(req, res) {
     account.authenticate(req, res, comment.vote);
 });
-
-//the following were not tested yet 
-
-app.post ('/images/upload', image.upload);
-app.get('/images/:imageid', image.get);
-
-/* the following is restful, try to make the service out of the ocs standard */
-/* TODO: change to 
- *  fan.localhost/:urlmd5
- *  fan.localhost/:urlmd5/fans
- *  fan.localhost/:personid/follow
- */
-app.get('/:urlmd5/fanstatus', function(req, res) {
-    account.authenticate(req, res, fan.status);
-});
-app.post('/:urlmd5/fanstatus', function(req, res) {
-    account.authenticate(req, res, fan.add);
-});
-app.delete('/:urlmd5/fanstatus', function(req, res) {
-    account.authenticate(req, res, fan.remove);
-});
-app.get('/:urlmd5/fans', function(req, res) {
-    account.authenticate(req, res, fan.get);
-});
-//app.get('/:personid/follow', fan.follow);
-app.post('/:urlmd5/vote', function(req, res) {
-    account.authenticate(req, res, vote.vote);
-});
-
-/*
-app.post('/:urlmd5/comment', function(req, res) {
-    account.authenticate(req, res, comment.add);
-});
 */
-app.post('/:urlmd5/comment', comment.add);
-app.get('/:urlmd5/comment', comment.get);
-
