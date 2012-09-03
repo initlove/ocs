@@ -24,26 +24,17 @@ app.configure('production', function(){
 });
 
 app.get('/:version/config', ocs.config.get);
-/*
+
 app.post('/:version/person/check', ocs.person.check);
 app.post('/:version/person/add', ocs.person.add);
 app.post('/:version/person/remove', ocs.person.remove);
-app.get('/:version/person/data', function(req, res) {
-    account.authenticate(req, res, person.search);
-});
-app.get('/:version/person/data/:personid', function(req, res) {
-    account.authenticate(req, res, person.get);
-});
-app.get('/:version/person/self', function(req, res) {
-    account.authenticate(req, res, person.getself);
-});
-app.post('/:version/person/self', function(req, res) {
-    account.authenticate(req, res, person.edit);
-});
-app.get('/:version/person/balance', function(req, res) {
-    account.authenticate(req, res, person.get_balance);
-});
+app.get('/:version/person/data', ocs.person.search);
+app.get('/:version/person/data/:personid', ocs.person.get);
+app.get('/:version/person/self', ocs.person.getself);
+app.post('/:version/person/self', ocs.person.edit);
+app.get('/:version/person/balance', ocs.person.get_balance);
 
+/*
 app.get('/:version/friend/status/:personid', function(req, res) {
     account.authenticate(req, res, friend.status);
 });
