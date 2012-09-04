@@ -1,4 +1,4 @@
-//var utils = require ('./utils');
+var utils = require ('../utils');
 
 var config = module.exports = {
     get: function(req, res) {
