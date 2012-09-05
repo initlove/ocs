@@ -11,7 +11,6 @@ var config = module.exports = {
         data.host = 'api.localhost:3000';
         data.contact = 'liangchenye@gmail.com';
         var result = {"ocs": {"meta": meta, "data": data}};
-console.log(result);
-  //      utils.info(req, res, result);
+        utils.info(req, res, result);
     },
 };

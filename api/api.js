@@ -31,6 +31,7 @@ function R(req, res, service, fn, callback){
     }
 };
 
+/* need login */
 function AR(req, res, service, fn){
     var S = require('./'+req.params.version+'/'+service);
     if (S && S[fn]){
@@ -69,6 +70,21 @@ app.post('/:version/person/self', function(req, res){
 });
 app.get('/:version/person/balance', function(req, res){
     AR(req, res, 'person', 'get_balance');
+});
+app.get('/:version/person/attributes/:personid', function(req, res){
+    R(req, res, 'person', 'get_attr');
+});
+app.get('/:version/person/attributes/:personid/:app', function(req, res){
+    R(req, res, 'person', 'get_attr');
+});
+app.get('/:version/person/attributes/:personid/:app/:key', function(req, res){
+    R(req, res, 'person', 'get_attr');
+});
+app.post('/:version/person/setattribute/:app/:key', function(req, res){
+    AR(req, res, 'person', 'set_attr');
+});
+app.post('/:version/person/deleteattribute/:app/:key', function(req, res){
+    AR(req, res, 'person', 'delete_attr');
 });
 
 app.get('/:version/friend/status/:personid', function(req, res){

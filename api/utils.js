@@ -12,6 +12,10 @@ exports.meta = function(message_type) {
             meta.status = "ok";
             meta.statuscode = 100;
             break;
+        case "successfull / valid account":
+            meta.status = "ok";
+            meta.statuscode = 100;
+            break;
         case "Server error":
             meta.statuscode = 110;
             break;
@@ -162,6 +166,17 @@ exports.info = function(req, res, result) {
 
 exports.message = function(req, res, msg) {
     var result = {"ocs": {"meta": exports.meta(msg)}};
+    if(req.query.format && (req.query.format == 'json')) {
+        res.writeHead(200, {'Content-Type': 'text/plain'});
+        res.end(JSON.stringify(result));
+    } else {
+        res.writeHead(200, {'Content-Type': 'text/xml'});
+        res.end(jsontoxml.obj_to_xml(result, true));
+    }
+}
+
+exports.err = function(req, res, code, msg) {
+    var result = {"ocs": {"meta": {"status": msg, "statuscode":code, "message":null}}};
     if(req.query.format && (req.query.format == 'json')) {
         res.writeHead(200, {'Content-Type': 'text/plain'});
         res.end(JSON.stringify(result));

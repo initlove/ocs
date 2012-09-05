@@ -61,7 +61,7 @@ var contentSchema = new Schema({
 /* status: 'in censor', 'online', 'offline' */
     ,status: {type: String, default: "in censor"}
 /* uid is the md5 of repo + name, repo end with '/' */
-    ,uid: {type: String, unique: true}
+ //   ,uid: {type: String, unique: true}
 });
 
 /*TODO: disconnect it ?  or keep it ? */
@@ -89,7 +89,7 @@ exports.add_content = function(doc, callback) {
     var str = doc.download[0].downloadrepository;
     if (str[str.length-1] != '/')
         str += '/';
-    content.uid = crypto.createHash('md5').update(str+doc.download[0].downloadname).digest("hex");
+   // content.uid = crypto.createHash('md5').update(str+doc.download[0].downloadname).digest("hex");
     content.save(function(err){
         if (err) {
             callback(false, err.toString());
@@ -278,7 +278,9 @@ exports.list = function(req, res) {
         pagesize = parseInt(req.query.pagesize);
 
     /* list the online packages */
-    var query = {status: 'online'};
+    //I totally forget why status should be online
+ //   var query = {status: 'online'};
+    var query = {};
     if (req.query.search) {
         query.$or = new Array();
         query.$or[0] = {"name" : new RegExp(req.query.search, 'i')};
