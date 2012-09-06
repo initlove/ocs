@@ -36,6 +36,7 @@ var personSchema = new Schema({
 
 mongoose.connect(utils.dbname);
 var personModel = mongoose.model('person', personSchema);
+var attrModel = mongoose.model('attr', attributeSchema);
 
 exports.check = function(req, res) {
     /*TODO:  fail 5 times in 5 minutes, the account or the IP hang for 1 hour? 
@@ -104,9 +105,9 @@ exports.edit = function(req, res) {
 
     personModel.update({"personid":login}, info, function(err) {
         if (err) {
-            utils.message(req, res, "Server error "+err);
+            utils.err(req, res, 911, "Server error "+err);
         } else {
-            utils.message(req, res, "ok");
+            utils.err(req, res, 100, "ok");
         }
     });
 };
@@ -292,9 +293,7 @@ exports.get_balance = function(req, res) {
             var result = {"ocs": {"meta": meta, "data": data}};
             utils.info(req, res, result);
         } else {
-            var meta = {"status": "ok", "statuscode": 100};
-            var result = {"ocs": {"meta": meta}};
-            utils.info(req, res, result);
+            utils.err(req, res, 101, "person not found: in get balance, should never happen");
         }
     });
 };
@@ -320,10 +319,81 @@ exports.get_attr = function(req, res) {
             var result = {"ocs": {"meta": meta, "data": data}};
             utils.info(req, res, result);
         } else {
-            var meta = {"status": "ok", "statuscode": 100};
-            var result = {"ocs": {"meta": meta}};
-            utils.info(req, res, result);
+            utils.err(req, res, 101, "person not found");
         }
     });
 };
 
+exports.set_attr = function(req, res) {
+    var personid = req.params.personid;
+    personModel.findOne({"personid":personid}, function(err, doc) {
+        if (err) {
+            utils.err(req, res, 911, "Server error "+err);
+        } else if (doc) {
+            var _update = false;
+            for (var i = 0; i < doc.attributes.length; i++) {
+                if (req.params.app == doc.attributes[i].app) {
+                    if (req.params.key == doc.attributes[i].key) {
+                        /*if app and key was same, update it*/
+                        doc.attributes[i].value = req.body.value;
+                        _update = true;
+                        break;
+                    }
+                }
+            }
+            if (!_update) {
+                var attr = new attrModel();
+                attr.app = req.params.app;
+                attr.key = req.params.key;
+                attr.value = req.params.value;
+                doc.attributes.push(attr);
+            }
+            /*TODO: not tested */
+            doc.save(function(err)) {
+                if (err) {
+                    utils.err(req, res, 911, "Server error "+err);
+                } else {
+                    /*TODO: when all thing works, rename err to message again */
+                    utils.err(req, res, 100, "ok");
+                }
+            }
+        } else {
+            utils.err(req, res, 101, "person not found: in set attr, should never happen");
+        }
+    });
+};
+
+exports.delete_attr = function(req, res) {
+    var personid = req.params.personid;
+    personModel.findOne({"personid":personid}, function(err, doc) {
+        if (err) {
+            utils.err(req, res, 911, "Server error "+err);
+        } else if (doc) {
+            var _update = false;
+            for (var i = 0; i < doc.attributes.length; i++) {
+                if (req.params.app == doc.attributes[i].app) {
+                    if (req.params.key == doc.attributes[i].key) {
+                        doc.attributes.splice(i, 1);
+                        _update = true;
+                        break;
+                    }
+                }
+            }
+            if (_update) {
+                doc.save(function(err) {
+                    if (err) {
+                        utils.err(req, res, 911, "Server error "+err);
+                    } else {
+                        /*TODO: when all thing works, rename err to message again */
+                        utils.err(req, res, 100, "ok");
+                    }
+                });
+            } else {
+                /* my added error code */
+                utils.err(req, res, 101, "cannot find the matched attr");
+            }
+        } else {
+            utils.err(req, res, 101, "person not found: in set attr, should never happen");
+        }
+    });
+};
