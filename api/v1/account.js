@@ -9,7 +9,7 @@ exports.authenticate = function (req, res, callback) {
     admindb.open(function(error, admindb) {
         admindb.authenticate(login, password, function(err, val) {
             if(err)
-                return utils.message(req, res, "fail to auth");
+                return utils.message(req, res, 101, "fail to auth");
             else
                 return callback(req, res);
         });
@@ -21,7 +21,7 @@ exports.auth = function(login, password, callback) {
     admindb.open(function(error, admindb) {
         admindb.authenticate(login, password, function(err, val) {
             if(err)
-                return callback(false, "fail to auth");
+                return callback(false, 101, "fail to auth");
             else
                 return callback(true);
         });
@@ -34,7 +34,7 @@ exports.add = function(login, password, callback) {
         admindb.addUser(login, password, function(err, result) {
             if(err) {
                 console.log("System error: add user to admin: "  + login + " ");
-                callback(false, "Server error");
+                callback(false, 911, "Server error");
             } else {
                 callback(true);
             }
@@ -43,20 +43,20 @@ exports.add = function(login, password, callback) {
 }
 
 exports.remove = function(login, password, callback) {
-    exports.auth(login, password, function(r, msg) {
+    exports.auth(login, password, function(r, code, msg) {
         if(r) {
             var admindb = new db('admin', new server("127.0.0.1", 27017, {}));
             admindb.open(function(error, admindb) {
                 admindb.removeUser(login, function(err, result) {
                     if(err) {
-                        callback(false, "Server error");
+                        callback(false, 911, "Server error");
                     } else {
                         callback(true);
                     }
                 });
             });
         } else {
-            callback(false, msg);
+            callback(false, code, msg);
         }
     });
 }

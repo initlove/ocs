@@ -1,4 +1,5 @@
 var utils = require('../utils');
+var account = require('./account');
 var express = require('express');
 var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
@@ -12,8 +13,10 @@ var attributeSchema = new Schema({
 });
 
 var personSchema = new Schema({
-    _id: {type: ObjectId, select: false}
-    ,personid: {type: String, required: true, unique: true}
+//    _id: {type: ObjectId, select: false}
+//    NOTE: when I set _id select == false, it seems cannot update it ..
+    personid: {type: String, required: true, unique: true}
+    //TODO: password save here? or just in the account
     ,password: {type: String, required: true}
     ,privacy: {type: Number, default:0}     /*TODO: enum ? */
     ,privacytext: {type: String}       
@@ -43,11 +46,11 @@ exports.check = function(req, res) {
      *   or send a validation email to enable it immediately
     */
     if (!req.body.login || !req.body.password) {
-        return utils.err(req, res, 101, "please specify all mandatory fields");
+        return utils.message(req, res, 101, "please specify all mandatory fields");
     }
     personModel.findOne({'personid': req.body.login, 'password': req.body.password}, function(err, doc) {
         if (err) {
-            return utils.err(req, res, 911, "Server error: "+err);
+            return utils.message(req, res, 911, "Server error: "+err);
         } else if (doc) {
             var meta = {"status": "ok", "statuscode": 100};
             var data = new Array();
@@ -55,7 +58,7 @@ exports.check = function(req, res) {
             var result = {"ocs": {"meta": meta, "data": data}};
             return utils.info(req, res, result);
         } else {
-            return utils.err(req, res, 102, "login not valid");
+            return utils.message(req, res, 102, "login not valid");
         }
     });
 };
@@ -66,7 +69,7 @@ exports.getself = function(req, res) {
     personModel.findOne({'personid': personid}, function(err, doc) {
         if (err) {
             console.log(err);
-            return utils.err(req, res, 911, "Server error "+err);
+            return utils.message(req, res, 911, "Server error "+err);
         } else if (doc) {
             var meta = {"status":"ok", "statuscode":100};
             var data = new Array();
@@ -74,7 +77,7 @@ exports.getself = function(req, res) {
             var result = {"ocs": {"meta": meta, "data": data}};
             return utils.info(req, res, result);
         } else {
-            return utils.err(req, res, 911, "Server error: cannot find the person.");
+            return utils.message(req, res, 911, "Server error: cannot find the person.");
         }
     });
 };
@@ -84,7 +87,7 @@ exports.edit = function(req, res) {
         !req.body.longtitude &&
         !req.body.city &&
         !req.body.country) {
-            utils.err(req, res, "no parameters to update found");
+            utils.message(req, res, "no parameters to update found");
             return;
         }
 
@@ -105,14 +108,15 @@ exports.edit = function(req, res) {
 
     personModel.update({"personid":login}, info, function(err) {
         if (err) {
-            utils.err(req, res, 911, "Server error "+err);
+            utils.message(req, res, 911, "Server error "+err);
         } else {
-            utils.err(req, res, 100, "ok");
+            utils.message(req, res, 100, "ok");
         }
     });
 };
 
 exports.add_user = function(user, callback) {
+    //TODO: when mongod did not start, the server is hung without any info?
     personModel.findOne({"personid":user.personid}, function(err, doc) {
         if (err) {
             callback(false, 911, "Server error "+err);
@@ -154,35 +158,41 @@ exports.add = function(req, res) {
     user.lastname = req.body.lastname;
     user.email = req.body.email;
 
-    if (!user.login||
+    if (!user.personid||
         !user.password ||
         !user.firstname ||
         !user.lastname ||
         !user.email) {
-        utils.err(req, res, 101, "please specify all mandatory fields ");
+        utils.message(req, res, 101, "please specify all mandatory fields ");
         return;
     }
 
     var password_filter = /[a-zA-Z0-9]{8,}/;
     if (!password_filter.test(user.password)) {
-        utils.err(req, res, 102, "please specify a valid password");
+        utils.message(req, res, 102, "please specify a valid password");
         return;
     }
 
     /*TODO: we did not spec the standard here */
     var login_filter = /[a-zA-Z0-9]{4,}/;
     if (!login_filter.test(user.personid)) {
-        utils.err(req, res, 103, "please specify a valid login");
+        utils.message(req, res, 103, "please specify a valid login");
         return;
     }
 
     var email_filter = /[a-zA-Z0-9._%-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}/;
     if (!email_filter.test(user.email)) {
-        utils.err(req, res, 106, "email invalid");
+        utils.message(req, res, 106, "email invalid");
         return;
     }
-    add_user(user, function(r, code, msg) {
-        utils.err(req, res, code, msg);
+    account.add(user.personid, user.password, function(r, code, msg) {
+        if (r){
+            exports.add_user(user, function(r, code, msg) {
+                utils.message(req, res, code, msg);
+            });
+        } else {
+            utils.message(req, res, code, msg);
+        }
     });
 };
 
@@ -191,15 +201,15 @@ exports.remove = function(req, res) {
     var password = req.body.password;
 
     if (!login || !password) {
-        utils.err(req, res, 101, "please specify all mandatory fields ");
+        utils.message(req, res, 101, "please specify all mandatory fields ");
         return;
     }
     personModel.remove({"personid" : login}, function(err) {
         if (err) {
-            utils.err(req, res, 911, "Server error "+err);
+            utils.message(req, res, 911, "Server error "+err);
             console.log(err);
         } else {
-            utils.err(req, res, 100, "ok");
+            utils.message(req, res, 100, "ok");
         }
     });
 };
@@ -208,21 +218,21 @@ exports.get = function(req, res) {
     var login = utils.get_username(req);
     personModel.findOne({"personid": req.params.personid}, function(err, doc) {
         if (err) {
-            utils.err(req, res, 911, "Server error "+err);
+            utils.message(req, res, 911, "Server error "+err);
             console.log(err);
         } else if (doc) {
             var meta = {"status":"ok", "statuscode":100};
             var data = new Array();
             /*question for the spec? that is the privacy level?*/
             if (doc.privacy) {
-                utils.err(req, res, 102, "data is private");
+                utils.message(req, res, 102, "data is private");
             } else {
                 data [0] = {"person": doc};
                 var result = {"ocs": {"meta": meta, "data": data}};
                 utils.info(req, res, result);
             }
         } else {
-            utils.err(req, res, 101, "person not found");
+            utils.message(req, res, 101, "person not found");
         }
     });
 };
@@ -247,16 +257,16 @@ exports.search = function(req, res) {
 /*TODO: attrs */
     personModel.count(query, function(err, count) {
         if (err) {
-            utils.err(req, res, 911, "Server error "+err);
+            utils.message(req, res, 911, "Server error "+err);
             console.log(err);
         } else {
             if (count > page*pagesize) {
                 personModel.find(query).skip(page*pagesize).limit(pagesize).exec(function(err, docs) {
                     if (err) {
-                        utils.err(req, res, 911, "Server error "+err);
+                        utils.message(req, res, 911, "Server error "+err);
                         console.log(err);
                     } else if (docs.length > 1000) {
-                        utils.err(req, res, 102, "more than 1000 people found. it is not allowed to fetch such a big resultset. please specify more search conditions ");
+                        utils.message(req, res, 102, "more than 1000 people found. it is not allowed to fetch such a big resultset. please specify more search conditions ");
                     } else {
                         var meta = {"status":"ok", "statuscode":100,
                                     "totalitems": count, "itemsperpage": pagesize};
@@ -283,7 +293,7 @@ exports.get_balance = function(req, res) {
     var login = utils.get_username(req);
     personModel.findOne({"personid":login}, function(err, doc) {
         if (err) {
-            utils.err(req, res, 911, "Server error "+err);
+            utils.message(req, res, 911, "Server error "+err);
         } else if (doc) {
             var data = new Array();
             /*TODO: default currency*/
@@ -293,7 +303,7 @@ exports.get_balance = function(req, res) {
             var result = {"ocs": {"meta": meta, "data": data}};
             utils.info(req, res, result);
         } else {
-            utils.err(req, res, 101, "person not found: in get balance, should never happen");
+            utils.message(req, res, 101, "person not found: in get balance, should never happen");
         }
     });
 };
@@ -302,7 +312,7 @@ exports.get_attr = function(req, res) {
     var personid = req.params.personid;
     personModel.findOne({"personid":personid}, function(err, doc) {
         if (err) {
-            utils.err(req, res, 911, "Server error "+err);
+            utils.message(req, res, 911, "Server error "+err);
         } else if (doc) {
             var data = new Array();
             var _filter = false;
@@ -319,16 +329,17 @@ exports.get_attr = function(req, res) {
             var result = {"ocs": {"meta": meta, "data": data}};
             utils.info(req, res, result);
         } else {
-            utils.err(req, res, 101, "person not found");
+            utils.message(req, res, 101, "person not found");
         }
     });
 };
 
 exports.set_attr = function(req, res) {
-    var personid = req.params.personid;
+    var personid = utils.get_username(req);
+    //TODO: how to find with array data? --mongoose
     personModel.findOne({"personid":personid}, function(err, doc) {
         if (err) {
-            utils.err(req, res, 911, "Server error "+err);
+            utils.message(req, res, 911, "Server error "+err);
         } else if (doc) {
             var _update = false;
             for (var i = 0; i < doc.attributes.length; i++) {
@@ -345,29 +356,27 @@ exports.set_attr = function(req, res) {
                 var attr = new attrModel();
                 attr.app = req.params.app;
                 attr.key = req.params.key;
-                attr.value = req.params.value;
+                attr.value = req.body.value;
                 doc.attributes.push(attr);
             }
-            /*TODO: not tested */
-            doc.save(function(err)) {
+            doc.save(function(err) {
                 if (err) {
-                    utils.err(req, res, 911, "Server error "+err);
+                    utils.message(req, res, 911, "Server error "+err);
                 } else {
-                    /*TODO: when all thing works, rename err to message again */
-                    utils.err(req, res, 100, "ok");
+                    utils.message(req, res, 100, "ok");
                 }
-            }
+            });
         } else {
-            utils.err(req, res, 101, "person not found: in set attr, should never happen");
+            utils.message(req, res, 101, "person not found: in set attr, should never happen");
         }
     });
 };
 
 exports.delete_attr = function(req, res) {
-    var personid = req.params.personid;
+    var personid = utils.get_username(req);
     personModel.findOne({"personid":personid}, function(err, doc) {
         if (err) {
-            utils.err(req, res, 911, "Server error "+err);
+            utils.message(req, res, 911, "Server error "+err);
         } else if (doc) {
             var _update = false;
             for (var i = 0; i < doc.attributes.length; i++) {
@@ -382,18 +391,17 @@ exports.delete_attr = function(req, res) {
             if (_update) {
                 doc.save(function(err) {
                     if (err) {
-                        utils.err(req, res, 911, "Server error "+err);
+                        utils.message(req, res, 911, "Server error "+err);
                     } else {
-                        /*TODO: when all thing works, rename err to message again */
-                        utils.err(req, res, 100, "ok");
+                        utils.message(req, res, 100, "ok");
                     }
                 });
             } else {
                 /* my added error code */
-                utils.err(req, res, 101, "cannot find the matched attr");
+                utils.message(req, res, 101, "cannot find the matched attr");
             }
         } else {
-            utils.err(req, res, 101, "person not found: in set attr, should never happen");
+            utils.message(req, res, 101, "person not found: in set attr, should never happen");
         }
     });
 };

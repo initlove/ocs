@@ -164,6 +164,7 @@ exports.info = function(req, res, result) {
     }
 }
 
+/* old one 
 exports.message = function(req, res, msg) {
     var result = {"ocs": {"meta": exports.meta(msg)}};
     if(req.query.format && (req.query.format == 'json')) {
@@ -174,8 +175,9 @@ exports.message = function(req, res, msg) {
         res.end(jsontoxml.obj_to_xml(result, true));
     }
 }
+*/
 
-exports.err = function(req, res, code, msg) {
+exports.message = function(req, res, code, msg) {
     var result = {"ocs": {"meta": {"status": msg, "statuscode":code, "message":null}}};
     if(req.query.format && (req.query.format == 'json')) {
         res.writeHead(200, {'Content-Type': 'text/plain'});
