@@ -6,8 +6,8 @@ var Schema = mongoose.Schema;
 var ObjectId = Schema.ObjectId;
 
 var friendDetailSchema = new Schema({
-    _id: {type:ObjectId, select:false}
-    ,personid: String
+//    _id: {type:ObjectId, select:false}
+    personid: String
     ,timestamp: {type: Date, default: Date.now}
 });
 
@@ -20,6 +20,7 @@ var inviteSchema = new Schema({
     ,timestamp: {type: Date, default: Date.now}
 });
 
+//I'm thinking, if this is good for nosql... 
 var friendSchema = new Schema({
     personid: String
     ,friends: {type:[friendDetailSchema], default:[]}

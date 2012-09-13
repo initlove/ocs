@@ -41,6 +41,19 @@ mongoose.connect(utils.dbname);
 var personModel = mongoose.model('person', personSchema);
 var attrModel = mongoose.model('attr', attributeSchema);
 
+exports.valid = function(personid, callback) {
+    personModel.findOne({'personid': personid}, function(err, doc) {
+        if (err) {
+            callback(false, 911, "Server err "+err);
+        } else if (doc) {
+            //TODO: true false may not necessary, we can check code ==100
+            callback(true, 100, "ok");
+        } else {
+            callback(false, 101, "user not found");
+        }
+    });
+};
+
 exports.check = function(req, res) {
     /*TODO:  fail 5 times in 5 minutes, the account or the IP hang for 1 hour? 
      *   or send a validation email to enable it immediately

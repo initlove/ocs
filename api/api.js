@@ -87,11 +87,12 @@ app.post('/:version/person/deleteattribute/:app/:key', function(req, res){
     AR(req, res, 'person', 'delete_attr');
 });
 
-app.get('/:version/friend/status/:personid', function(req, res){
-    AR(req, res, 'friend', 'status');
-});
+/*** friend ***/
 app.get('/:version/friend/data/:personid', function(req, res){
     AR(req, res, 'friend', 'get');
+});
+app.get('/:version/friend/status/:personid', function(req, res){
+    AR(req, res, 'friend', 'status'); /* mine */
 });
 app.get('/:version/friend/receivedinvitations', function(req, res){
     AR(req, res, 'friend', 'rece');
@@ -112,10 +113,19 @@ app.post('/:version/friend/cancel/:personid', function(req, res){
     AR(req, res, 'friend', 'cancel');
 });
 
+/*** message ***/
+/*** spec TODO: how to trash or archive ? ***/
 app.get('/:version/message', function(req, res){
+    AR(req, res, 'message', 'folder');
+});
+app.get('/:version/message/:folderid', function(req, res){
     AR(req, res, 'message', 'list');
 });
-app.post('/:version/message', function(req, res){
+app.get('/:version/message/:folderid/:messageid', function(req, res){
+    AR(req, res, 'message', 'get');
+});
+/* a little strange to name the folderid */
+app.post('/:version/message/:folderid', function(req, res){
     AR(req, res, 'message', 'send');
 });
 
